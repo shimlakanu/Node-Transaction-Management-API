@@ -6,7 +6,8 @@ const app = express();
 app.use(express.json());
 const port = 3000;
 
-// creating an account :
+
+// creating a new account :
 
 app.post('/account', async(req, res) => {
     const name = req.body.name;
@@ -35,8 +36,8 @@ app.post('/account', async(req, res) => {
 })
 
 
-// fetch account info with specific id:
 
+// fetch account info with specific account_id:
 
 app.get('/Account/:id', async (req,res) => {
     const id = parseInt(req.params.id);
@@ -63,8 +64,8 @@ app.get('/Account/:id', async (req,res) => {
 })
 
 
-// fetch balance of specific account :
 
+// fetch balance of specific account :
 
 app.get('/Account/:id/balance', async (req,res) => {
     const id = parseInt(req.params.id);
@@ -87,8 +88,8 @@ app.get('/Account/:id/balance', async (req,res) => {
 })
 
 
-// fetch reward point of specific account :
 
+// fetch reward point of specific account :
 
 app.get('/Account/:id/reward_point', async (req,res) => {
     const id = parseInt(req.params.id);
@@ -111,8 +112,8 @@ app.get('/Account/:id/reward_point', async (req,res) => {
 })
 
 
-// creating a savings account :
 
+// creating a new savings account :
 
 app.post('/savings/:id', async(req, res) => {
     
