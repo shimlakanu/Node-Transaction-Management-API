@@ -6,10 +6,7 @@ const app = express();
 app.use(express.json());
 const port = 3000;
 
-
-let cur_id = 1;
-
-
+// creating an account :
 
 app.post('/account', async(req, res) => {
     const name = req.body.name;
@@ -20,7 +17,6 @@ app.post('/account', async(req, res) => {
         .from ('Account')
         .insert({
             'account_id' : account_id,
-            'id' : cur_id++,
             'created_at' : new Date().toJSON(),
             'password' :  password,
             'name' : name,
@@ -36,8 +32,10 @@ app.post('/account', async(req, res) => {
     {
         res.send(" please recheck ")
     }
-    
 })
+
+
+// fetch account info with specific id:
 
 
 app.get('/Account/:id', async (req,res) => {
@@ -65,6 +63,9 @@ app.get('/Account/:id', async (req,res) => {
 })
 
 
+// fetch balance of specific account :
+
+
 app.get('/Account/:id/balance', async (req,res) => {
     const id = parseInt(req.params.id);
     const { data, error } = await supabase
@@ -85,6 +86,10 @@ app.get('/Account/:id/balance', async (req,res) => {
     }
 })
 
+
+// fetch reward point of specific account :
+
+
 app.get('/Account/:id/reward_point', async (req,res) => {
     const id = parseInt(req.params.id);
     const { data, error } = await supabase
@@ -103,6 +108,23 @@ app.get('/Account/:id/reward_point', async (req,res) => {
     {
         res.send("no such id exists");
     }
+})
+
+
+// creating a savings account :
+
+
+app.post('/savings/:id', async(req, res) => {
+    
+    const id = parseInt(req.params.id);
+    console.log(id);
+    const { data , error } = await supabase 
+        from ("SavingsAccount")
+        .select()
+        .eq('id',id)
+
+    console.log(data);
+    // res.send("done");
 })
 
 app.listen(port);
