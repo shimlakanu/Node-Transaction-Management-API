@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const supabase = require('./supabaseClient');
+const {isValidId} = require('./transaction');
+const {isValidSender} = require('./transaction');
 const uuid = require("uuid");
 const app = express();
 app.use(express.json());
@@ -164,8 +166,29 @@ app.put('/cash_out', async (req, res) => {
 })
 
 
-// app.post('/transaction', async (req,res)=>{
+app.post('/transaction', async (req,res)=>{
 
-// })
+    const from_id = req.body.from_id;
+    const to_id =  req.body.to_id;
+    const amount = req.body.amount;
+    const type = req.body.type;
+    const password = req.body.password;
+
+
+    const is_valid_sender = await isValidSender(password , from_id , amount);
+    const is_valid_receiver = await isValidId(to_id);
+    console.log(is_valid_sender);
+    console.log(is_valid_receiver);
+
+
+    // if(is_valid_receiver==1 && is_valid_receiver!=-1){
+
+    // }
+    // else{
+
+    // }
+
+})
 
 app.listen(port);
+
