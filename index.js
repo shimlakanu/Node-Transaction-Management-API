@@ -9,6 +9,8 @@ app.use(express.json());
 const port = 3000;
 
 let cur_id = 1;
+// TODO: this file should be simpler.
+// Remove all the account and transaction related codes.
 
 app.post("/account", async (req, res) => {
   const name = req.body.name;
