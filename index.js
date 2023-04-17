@@ -4,19 +4,18 @@ const supabase = require("./supabaseClient");
 const { isValidId } = require("./transaction");
 const { isValidSender } = require("./transaction");
 const uuid = require("uuid");
+const { fetchAccountById } = require("./database/account");
 const app = express();
 app.use(express.json());
 const port = 3000;
 
 let cur_id = 1;
-// TODO: this file should be simpler.
-// Remove all the account and transaction related codes.
 
 app.post("/account", async (req, res) => {
   const name = req.body.name;
   const password = req.body.password;
   let account_id = uuid.v4();
-  // TODO: use createAccount from /database/account
+
   const { data, error } = await supabase.from("Account").insert({
     account_id: account_id,
     id: cur_id++,
@@ -34,24 +33,14 @@ app.post("/account", async (req, res) => {
   }
 });
 
-// TODO: use /account/:id (small A)
-app.get("/Account/:id", async (req, res) => {
+app.get("/account/:id", async (req, res) => {
   const id = parseInt(req.params.id);
-  // TODO use from /account/fetchAccountById
-  const { data, error } = await supabase.from("Account").select().eq("id", id);
+  const { data } = fetchAccountById(id);
 
-  if (!error) {
-    // TODO: response an error or the object
-    const response = {
-      "name ": data[0].name,
-      id: data[0].id,
-      created_at: data[0].created_at,
-      reward_point: data[0].reward_point,
-      balance: data[0].balance,
-    };
-    res.json(response);
+  if (data) {
+    res.json(data);
   } else {
-    res.send("no such id exists");
+    res.send("Account not found!");
   }
 });
 
