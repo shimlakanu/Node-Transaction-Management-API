@@ -28,7 +28,7 @@ async function createAccount({ name, password }) {
   });
 }
 
-async function updateAccount({ updatedAccountInfo }) {
+async function updateAccount(updatedAccountInfo) {
   const { data, error } = await supabase
     .from("Account")
     .upsert(updatedAccountInfo);

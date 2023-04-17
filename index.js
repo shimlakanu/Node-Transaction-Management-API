@@ -148,13 +148,6 @@ app.post("/transaction", async (req, res) => {
   const is_valid_receiver = await isValidId(to_id);
   console.log(is_valid_sender);
   console.log(is_valid_receiver);
-
-  // if(is_valid_receiver==1 && is_valid_receiver!=-1){
-
-  // }
-  // else{
-
-  // }
 });
 
 app.listen(port);
