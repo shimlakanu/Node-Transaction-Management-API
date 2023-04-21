@@ -1,131 +1,105 @@
-require('dotenv').config();
-const express = require('express');
-const supabase = require('./supabaseClient');
-const uuid = require("uuid");
+require("dotenv").config();
+const express = require("express");
+const { fetchAccountById, createAccount } = require("./database/account");
+const { makeTransaction, adminTransaction } = require("./database/transaction");
 const app = express();
 app.use(express.json());
 const port = 3000;
 
+// creating new account :
+app.post("/account", async (req, res) => {
+  const { name, password } = req.body;
+  const { status, accountInfo } = await createAccount({
+    name: name,
+    password: password,
+  });
+  if (status == 201) {
+    res.json(accountInfo);
+    return;
+  }
+  res.send("failed :(");
+});
 
-// creating a new account :
+//fetch account by id:
+app.get("/account/:account_id", async (req, res) => {
+  const account_id = req.params.account_id;
+  const data = await fetchAccountById(account_id);
+  if (data) {
+    res.json(data);
+    return;
+  }
+  res.send("Account not found!");
+});
 
-app.post('/account', async(req, res) => {
-    const name = req.body.name;
-    const password = req.body.password;
-    let account_id = uuid.v4(); 
+// get balance of specific account :
+app.get("/account/:account_id/balance", async (req, res) => {
+  const account_id = req.params.account_id;
+  const data = await fetchAccountById(account_id);
+  if (data) {
+    res.json({ balance: data.balance });
+    return;
+  }
+  res.send("Account not found!");
+});
 
-    const {data, error} = await supabase
-        .from ('Account')
-        .insert({
-            'account_id' : account_id,
-            'created_at' : new Date().toJSON(),
-            'password' :  password,
-            'name' : name,
-            "balance" : 0,
-            'reward_point' : 0
-        });
+// get reward point of specific account :
+app.get("/account/:account_id/reward_point", async (req, res) => {
+  const account_id = req.params.account_id;
+  const data = await fetchAccountById(account_id);
+  if (data) {
+    res.json({ "reward point": data.reward_point });
+    return;
+  }
+  res.send("Account not found!");
+});
 
-    if(!error) 
-    {
-        res.send("successfully done :D ")
-    }
-    else 
-    {
-        res.send(" please recheck ")
-    }
-})
+//transaction management :
+app.post("/transaction", async (req, res) => {
+  const {
+    amount,
+    sender_id: senderId,
+    receiver_id: receiverId,
+    password,
+  } = req.body;
+  try {
+    await makeTransaction({
+      amount,
+      receiverId,
+      senderId,
+      senderPassword: password,
+    });
+    res.send("transaction successful :D");
+  } catch (error) {
+    res.json({ message: error.message });
+  }
+});
 
-
-
-// fetch account info with specific account_id:
-
-app.get('/Account/:id', async (req,res) => {
-    const id = parseInt(req.params.id);
-    const { data, error } = await supabase
-        .from('Account')
-        .select()
-        .eq('id', id);
-
-    if (!error) 
-    {
-        const response = {
-            "name " : data[0].name,
-            "id" : data[0].id,
-            "created_at" : data[0].created_at,
-            "reward_point" : data[0].reward_point,
-            "balance" : data[0].balance
-        }
-        res.json(response);
-    }
-    else 
-    {
-        res.send("no such id exists");
-    }
-})
-
-
-
-// fetch balance of specific account :
-
-app.get('/Account/:id/balance', async (req,res) => {
-    const id = parseInt(req.params.id);
-    const { data, error } = await supabase
-        .from('Account')
-        .select()
-        .eq('id', id);
-
-    if (!error) 
-    {
-        const response = {
-            "balance" : data[0].balance
-        }
-        res.json(response);
-    }
-    else 
-    {
-        res.send("no such id exists");
-    }
-})
-
-
-
-// fetch reward point of specific account :
-
-app.get('/Account/:id/reward_point', async (req,res) => {
-    const id = parseInt(req.params.id);
-    const { data, error } = await supabase
-        .from('Account')
-        .select()
-        .eq('id', id);
-
-    if (!error) 
-    {
-        const response = {
-            "reward_point" : data[0].reward_point
-        }
-        res.json(response);
-    }
-    else 
-    {
-        res.send("no such id exists");
-    }
-})
-
-
+//transaction by admin:
+app.post("/admin/transafer-balance", async (req, res) => {
+  const {
+    amount,
+    sender_id: adminId,
+    password: adminPassword,
+    receiver_id: receiverId,
+  } = req.body;
+  try {
+    await adminTransaction({ amount, adminId, adminPassword, receiverId });
+    res.send("transaction successful :D");
+  } catch (error) {
+    res.json({ message: error.message });
+  }
+});
 
 // creating a new savings account :
 
-app.post('/savings/:id', async(req, res) => {
-    
-    const id = parseInt(req.params.id);
-    console.log(id);
-    const { data , error } = await supabase 
-        from ("SavingsAccount")
-        .select()
-        .eq('id',id)
+app.post("/savings/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  console.log(id);
+  const { data, error } = await supabase;
+  from("SavingsAccount").select().eq("id", id);
 
-    console.log(data);
-    // res.send("done");
-})
+  console.log(data);
+  // res.send("done");
+});
 
 app.listen(port);
