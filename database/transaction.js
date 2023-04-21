@@ -1,6 +1,5 @@
 const { updateAccount, fetchAccountById } = require("./account");
 
-// All the functions related to transactions will go here.
 // only those functions will be exported that are actually needed in the top layer.
 
 function isValidSender({ sender, password }) {
@@ -18,6 +17,7 @@ function isSufficientAmount({ account, amount }) {
   return account.balance >= amount;
 }
 
+//TODO : chect integrity 
 async function postTransaction({ sender, receiver, amount }) {
   sender.amount -= amount;
   receiver.amount += amount;
@@ -37,11 +37,11 @@ async function makeTransaction({
     !isValidSender({ sender, password: senderPassword }) ||
     !isValidReceiver(receiver)
   ) {
-    throw new Error("Invalid sender reciever info");
+    throw new Error("Invalid sender / reciever info");
   }
 
   if (!isSufficientAmount({ account: sender, amount })) {
-    throw new Error("Insufficient amount");
+    throw new Error("Insufficient balance");
   }
 
   await postTransaction({ sender, receiver, amount });

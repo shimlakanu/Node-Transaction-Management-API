@@ -1,142 +1,108 @@
 require("dotenv").config();
 const express = require("express");
 const supabase = require("./supabaseClient");
-const { isValidId } = require("./transaction");
-const { isValidSender } = require("./transaction");
-const uuid = require("uuid");
-const { fetchAccountById } = require("./database/account");
+const {
+  fetchAccountById,
+  createAccount,
+  updateAccount,
+} = require("./database/account");
+const { makeTransaction } = require("./database/transaction");
 const app = express();
 app.use(express.json());
 const port = 3000;
 
-let cur_id = 1;
-
+// creating new account : (id kmne janbe?)
 app.post("/account", async (req, res) => {
-  const name = req.body.name;
-  const password = req.body.password;
-  let account_id = uuid.v4();
-
-  const { data, error } = await supabase.from("Account").insert({
-    account_id: account_id,
-    id: cur_id++,
-    created_at: new Date().toJSON(),
-    password: password,
+  const { name, password } = req.body;
+  const { status, accountInfo } = await createAccount({
     name: name,
-    balance: 0,
-    reward_point: 0,
+    password: password,
   });
-
-  if (!error) {
-    res.send("successfully done :D ");
-  } else {
-    res.send(" please recheck ");
+  if (status == 201) {
+    res.json(accountInfo);
+    return;
   }
+  res.send("failed :(");
 });
 
-app.get("/account/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
-  const { data } = fetchAccountById(id);
-
+//fetch account by id:
+app.get("/account/:account_id", async (req, res) => {
+  const account_id = req.params.account_id;
+  const data = await fetchAccountById(account_id);
   if (data) {
-    res.json(data);
-  } else {
-    res.send("Account not found!");
+    res.send(data);
+    return;
   }
+  res.send("Account not found!");
 });
 
-// TODO: use /account/:id/balance - small a
-app.get("/Account/:id/balance", async (req, res) => {
-  const id = parseInt(req.params.id);
-  // TODO:  fetch from /database/account/fetchAccountById
-  const { data, error } = await supabase.from("Account").select().eq("id", id);
-
-  if (!error) {
-    const response = {
-      balance: data[0].balance,
-    };
-    res.json(response);
-  } else {
-    res.send("no such id exists");
+// get balance of specific account :
+app.get("/account/:account_id/balance", async (req, res) => {
+  const account_id = req.params.account_id;
+  const data = await fetchAccountById(account_id);
+  if (data) {
+    res.json({ balance: data.balance });
+    return;
   }
+  res.send("Account not found!");
 });
 
-app.get("/Account/:id/reward_point", async (req, res) => {
-  const id = parseInt(req.params.id);
-  const { data, error } = await supabase.from("Account").select().eq("id", id);
-
-  if (!error) {
-    const response = {
-      reward_point: data[0].reward_point,
-    };
-    res.json(response);
-  } else {
-    res.send("no such id exists");
+// get reward point of specific account :
+app.get("/account/:account_id/reward_point", async (req, res) => {
+  const account_id = req.params.account_id;
+  const data = await fetchAccountById(account_id);
+  if (data) {
+    res.json({ "reward point": data.reward_point });
+    return;
   }
-});
-
-app.put("/cash_in", async (req, res) => {
-  const amount = req.body.amount;
-  const id = req.body.id;
-  const password = req.body.password;
-  const { data, error } = await supabase.from("Account").select().eq("id", id);
-
-  if (!error) {
-    const actual_password = data[0].password;
-    const current_balance = data[0].balance;
-
-    if (actual_password == password) {
-      const { data, error } = await supabase
-        .from("Account")
-        .update({ balance: current_balance + amount })
-        .eq("id", id);
-      res.send("Successfully done :D");
-    } else {
-      res.send("Incorrect password. Please try again :D");
-    }
-  } else {
-    res.send("No such account exist :D");
-  }
-});
-
-app.put("/cash_out", async (req, res) => {
-  const amount = req.body.amount;
-  const id = req.body.id;
-  const password = req.body.password;
-  const { data, error } = await supabase.from("Account").select().eq("id", id);
-
-  if (!error) {
-    const actual_password = data[0].password;
-    const current_balance = data[0].balance;
-
-    if (actual_password == password) {
-      if (current_balance >= amount) {
-        const { data, error } = await supabase
-          .from("Account")
-          .update({ balance: current_balance - amount })
-          .eq("id", id);
-        res.send("Successfully done :D");
-      } else {
-        res.send("Insufficient balance :D ");
-      }
-    } else {
-      res.send("Incorrect password. Please try again :D");
-    }
-  } else {
-    res.send("No such account exist :D");
-  }
+  res.send("Account not found!");
 });
 
 app.post("/transaction", async (req, res) => {
-  const from_id = req.body.from_id;
-  const to_id = req.body.to_id;
-  const amount = req.body.amount;
-  const type = req.body.type;
-  const password = req.body.password;
-
-  const is_valid_sender = await isValidSender(password, from_id, amount);
-  const is_valid_receiver = await isValidId(to_id);
-  console.log(is_valid_sender);
-  console.log(is_valid_receiver);
+  const {
+    amount,
+    sender_id: senderId,
+    receiver_id: receiverId,
+    password,
+  } = req.body;
+  try{
+    await makeTransaction({
+      amount,
+      receiverId,
+      senderId,
+      senderPassword: password,
+    });
+  }
+  catch(error){
+    res.json({message : error.message});
+  }
 });
+
+
+// 1. crate admin account using post with balance
+// 2. admin account id, pass -- in .env
+// 3. receiver id, admin id, amount 
+// 4. adminTransaction(receiverid, admin id, amount)
+// 5. (admin id == env. admin id and pass macthed?) if yes then transaction .account
+// 6. error handle  
+
+
+// app.post("/admin/transafer-balance",(req,res)=>{
+//   const {amount,password,adminId,receiverId} = req.body;
+
+// });
+
+// app.post("/transaction", async (req, res) => {
+//   const from_id = req.body.from_id;
+//   const to_id = req.body.to_id;
+//   const amount = req.body.amount;
+//   const type = req.body.type;
+//   const password = req.body.password;
+
+//   const is_valid_sender = await isValidSender(password, from_id, amount);
+//   const is_valid_receiver = await isValidId(to_id);
+//   console.log(is_valid_sender);
+//   console.log(is_valid_receiver);
+// });
 
 app.listen(port);
