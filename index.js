@@ -1,17 +1,12 @@
 require("dotenv").config();
 const express = require("express");
-const supabase = require("./supabaseClient");
-const {
-  fetchAccountById,
-  createAccount,
-  updateAccount,
-} = require("./database/account");
-const { makeTransaction } = require("./database/transaction");
+const { fetchAccountById, createAccount } = require("./database/account");
+const { makeTransaction, adminTransaction } = require("./database/transaction");
 const app = express();
 app.use(express.json());
 const port = 3000;
 
-// creating new account : (id kmne janbe?)
+// creating new account :
 app.post("/account", async (req, res) => {
   const { name, password } = req.body;
   const { status, accountInfo } = await createAccount({
@@ -58,6 +53,7 @@ app.get("/account/:account_id/reward_point", async (req, res) => {
   res.send("Account not found!");
 });
 
+//transaction management :
 app.post("/transaction", async (req, res) => {
   const {
     amount,
@@ -65,44 +61,32 @@ app.post("/transaction", async (req, res) => {
     receiver_id: receiverId,
     password,
   } = req.body;
-  try{
+  try {
     await makeTransaction({
       amount,
       receiverId,
       senderId,
       senderPassword: password,
     });
-  }
-  catch(error){
-    res.json({message : error.message});
+  } catch (error) {
+    res.json({ message: error.message });
   }
 });
 
-
-// 1. crate admin account using post with balance
-// 2. admin account id, pass -- in .env
-// 3. receiver id, admin id, amount 
-// 4. adminTransaction(receiverid, admin id, amount)
-// 5. (admin id == env. admin id and pass macthed?) if yes then transaction .account
-// 6. error handle  
-
-
-// app.post("/admin/transafer-balance",(req,res)=>{
-//   const {amount,password,adminId,receiverId} = req.body;
-
-// });
-
-// app.post("/transaction", async (req, res) => {
-//   const from_id = req.body.from_id;
-//   const to_id = req.body.to_id;
-//   const amount = req.body.amount;
-//   const type = req.body.type;
-//   const password = req.body.password;
-
-//   const is_valid_sender = await isValidSender(password, from_id, amount);
-//   const is_valid_receiver = await isValidId(to_id);
-//   console.log(is_valid_sender);
-//   console.log(is_valid_receiver);
-// });
+//transaction by admin:
+app.post("/admin/transafer-balance", async (req, res) => {
+  const {
+    amount,
+    sender_id: adminId,
+    password: adminPassword,
+    receiver_id: receiverId,
+  } = req.body;
+  try {
+    await adminTransaction({ amount, adminId, adminPassword, receiverId });
+    res.send("transaction successful :D");
+  } catch (error) {
+    res.json({ message: error.message });
+  }
+});
 
 app.listen(port);
