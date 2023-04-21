@@ -25,7 +25,7 @@ app.get("/account/:account_id", async (req, res) => {
   const account_id = req.params.account_id;
   const data = await fetchAccountById(account_id);
   if (data) {
-    res.send(data);
+    res.json(data);
     return;
   }
   res.send("Account not found!");
@@ -68,6 +68,7 @@ app.post("/transaction", async (req, res) => {
       senderId,
       senderPassword: password,
     });
+    res.send("transaction successful :D")
   } catch (error) {
     res.json({ message: error.message });
   }
