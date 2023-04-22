@@ -96,7 +96,6 @@ async function fetchSavingsAccountById(accountId) {
  * for an account.
  */
 async function updateAccount(updatedAccountInfo) {
-  console.log(updatedAccountInfo);
   const { data, error } = await supabase
     .from("Account")
     .upsert(updatedAccountInfo);
