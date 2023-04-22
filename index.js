@@ -1,6 +1,10 @@
 require("dotenv").config();
 const express = require("express");
 const { fetchAccountById, createAccount } = require("./database/account");
+const {
+  makeSavingsAccount,
+  makeSavingsTransaction,
+} = require("./database/savings");
 const { makeTransaction, adminTransaction } = require("./database/transaction");
 const app = express();
 app.use(express.json());
@@ -91,15 +95,35 @@ app.post("/admin/transafer-balance", async (req, res) => {
 });
 
 // creating a new savings account :
+app.post("/savings-account", async (req, res) => {
+  const { account_id, account_password, savings_password } = req.body;
+  // console.log(account_id,account_password,savings_password);
+  try {
+    const params = {
+      account_id,
+      account_password,
+      savings_password,
+    };
+    const { status, savings_accountInfo } = await makeSavingsAccount(params);
+    if (status == 201) {
+      res.json(savings_accountInfo);
+      return;
+    }
+    res.send("failed :(");
+  } catch (error) {
+    res.json({ message: error.message });
+  }
+});
 
-app.post("/savings/:id", async (req, res) => {
-  const id = parseInt(req.params.id);
-  console.log(id);
-  const { data, error } = await supabase;
-  from("SavingsAccount").select().eq("id", id);
-
-  console.log(data);
-  // res.send("done");
+//savings accout transactions :
+app.post("/savings-transaction", async (req, res) => {
+  const { amount, account_id, password } = req.body;
+  try {
+    await makeSavingsTransaction({ amount, account_id, password });
+    res.send("transaction successfull :D");
+  } catch (error) {
+    res.json({ message: error.message });
+  }
 });
 
 app.listen(port);

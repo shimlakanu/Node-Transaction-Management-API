@@ -1,5 +1,4 @@
 const supabase = require("../supabaseClient");
-const uuid = require("uuid");
 
 function generateAccountId() {
   const now = new Date();
@@ -31,6 +30,7 @@ async function fetchAccountById(account_id) {
 
   if (!error) {
     return data;
+    updateSavingsAccount;
   }
   return null;
 }
@@ -56,19 +56,63 @@ async function createAccount({ name, password }) {
   return null;
 }
 
+//creating savings account :
+async function createSavingsAccount({ account_id, savings_password }) {
+  const savings_accountInfo = {
+    account_id: account_id,
+    savings_account_id: generateAccountId(),
+    created_at: new Date().toJSON(),
+    password: savings_password,
+    balance: 0,
+  };
+
+  const { status, error } = await supabase
+    .from("SavingsAccount")
+    .insert(savings_accountInfo);
+
+  if (!error) {
+    return { status, savings_accountInfo };
+  }
+  return null;
+}
+
+// fetch savings account :
+async function fetchSavingsAccountById(accountId) {
+  const { data, error } = await supabase
+    .from("SavingsAccount")
+    .select()
+    .eq("account_id", accountId)
+    .limit(1)
+    .single();
+
+  if (!error) {
+    return data;
+  }
+  return null;
+}
 /**
  * This function updates an account's information in a Supabase database.
  * @param updatedAccountInfo - `updatedAccountInfo` is an object that contains the updated information
  * for an account.
  */
 async function updateAccount(updatedAccountInfo) {
+  console.log(updatedAccountInfo);
   const { data, error } = await supabase
     .from("Account")
     .upsert(updatedAccountInfo);
+}
+
+async function updateSavingsAccount(updatedSavingsAccountInfo) {
+  const { data, error } = await supabase
+    .from("SavingsAccount")
+    .upsert(updatedSavingsAccountInfo);
 }
 
 module.exports = {
   fetchAccountById,
   createAccount,
   updateAccount,
+  updateSavingsAccount,
+  createSavingsAccount,
+  fetchSavingsAccountById,
 };
